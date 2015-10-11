@@ -32,7 +32,7 @@ if not sys.platform.startswith('win'):
 	import socket # accessing hostname for SYSLOG filter
 	import pwd    # log user name in SYSLOG
 # LOGOUTD specific
-# flask must be installed via PIP
+# pip install flask PyObjC
 from flask import Flask, request, jsonify, abort
 app = Flask(__name__)
 
@@ -106,10 +106,12 @@ def parse_arguments(syslogAppName='PYTHON',syslogFacility=SysLogHandler.LOG_USER
 
 # Configure logging according to command line options
 def setup_logging(args, syslogAppName, syslogFacility):
-	global is_debug
 	# setting log format
 	# See: https://docs.python.org/2/library/logging.html#logrecord-attributes
-	logging_format_string = '%(asctime)s [%(levelname)-7s][%(filename)s:%(lineno)04d][%(funcName)s] %(message)s'
+	if logging.DEBUG == args.LOGLEVEL:
+		logging_format_string = '%(asctime)s [%(levelname)-7s][%(pathname)s][%(filename)s:%(lineno)04d][%(funcName)s] %(message)s'
+	else:
+		logging_format_string = '%(asctime)s [%(levelname)-7s][%(filename)s:%(lineno)04d][%(funcName)s] %(message)s'
 	# finish setting log level
 	if not hasattr(args, 'LOGLEVEL') or args.LOGLEVEL is None:
 		args.LOGLEVEL = logging.WARNING
