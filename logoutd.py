@@ -12,7 +12,7 @@ __author__ = "Kai Ellinger"
 __copyright__ = "Copyright 2015, Kai Ellinger"
 #__credits__ = ["yes", "please"]
 __license__ = "MIT"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __maintainer__ = "Kai Ellinger"
 __email__ = "coding@blicke.de"
 __status__ = "Development"
@@ -231,32 +231,49 @@ def read_config(config_file, args):
 
 	return True
 
-#
+# list all users that are connected to the console
+# an user is active when it owns /dev/console
+# and an user is locked when its shell is /usr/bin/false
 @app.route('/edward/api/v1.0/status', methods=['GET'])
 def get_users():
 	#if not request.json or not 'user' in request.json:
 	#	abort(400)
-	
+	users = []
 
+	# get user name currently active on the console
+	active_user = pwd.getpwuid(os.stat('/dev/console').st_uid).pw_name
+	if 'root' == active_user:
+		active_user = 'none'
 
+	# get all user names currently logged in to the console
 	who = subprocess.Popen(['w','-h'],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-	for user in who.stdout.read().split('\n'):
-		fields = user.split()
-		if (len(fields) >1) and (fields[1] == 'console'):
-			print "name: %s terminal: %s" % ( fields[0], fields[1] )  
+	for user_line in who.stdout.read().split('\n'):
+		user_fields = user_line.split()
+		is_active = False
+		is_locked = False
+		if (len(user_fields) >1) and (user_fields[1] == 'console'):
+			if active_user == user_fields[0]:
+				is_active = True
 
-	# get user name currently logged in to console
-	console_user = pwd.getpwuid(os.stat('/dev/console').st_uid).pw_name
-	if 'root' == console_user:
-		console_user = 'none'
+			# check whether user is locked
+			dscl = subprocess.Popen(['dscl','.','-read','/Users/%s' % user_fields[0] ,'shell'],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			for shell_line in dscl.stdout.read().split('\n'):
+				shell_fields = shell_line.split()
+				if (len(shell_fields) == 2) and (shell_fields[1] == '/usr/bin/false'):
+					is_locked = True
 
-	users = [
-		{
-			'user': console_user,
-			'active': True,
-			'locked': False
-		}
-	]
+
+			logging.debug("Found user '%s' connected to console! User is active(%s)! User is locked(%s)" % ( user_fields[0], str(is_active), str(is_locked) ) )
+			
+			# add user to JSON to be returned
+			monitor_user = {
+					'username': user_fields[0],
+					'active': is_active,
+					'locked': is_locked
+				}
+			users.append(monitor_user)
+
+
 	return jsonify({'users': users})
 
 #
@@ -279,7 +296,7 @@ def lock_user():
 def main():
 	global is_debug
 	# checking command line arguments
-	args = parse_arguments(syslogAppName="POP3MONITOR",syslogFacility=SysLogHandler.LOG_MAIL)
+	args = parse_arguments(syslogAppName="LOGOUTD")
 	if args is None:
 		logging.debug("ARGS is None")
 		return -22
