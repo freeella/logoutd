@@ -22,7 +22,7 @@ __status__ = "Development"
 # Imports!
 #####################################################
 # used modules
-import os, sys
+import os, sys, pwd, subprocess
 import ConfigParser # reading user configuration
 import argparse     # reading user arguments
 import traceback    # printing stack trace
@@ -30,7 +30,7 @@ import logging      # for logging text
 if not sys.platform.startswith('win'):
 	from logging.handlers import SysLogHandler # SYSLOG logging
 	import socket # accessing hostname for SYSLOG filter
-	import pwd    # log user name in SYSLOG
+#	import pwd    # log user name in SYSLOG
 # LOGOUTD specific
 # pip install flask PyObjC
 from flask import Flask, request, jsonify, abort
@@ -232,15 +232,43 @@ def read_config(config_file, args):
 	return True
 
 #
-@app.route('/edward/api/v1.0/status', methods=['POST'])
-def get_tasks():
+@app.route('/edward/api/v1.0/status', methods=['GET'])
+def get_users():
+	#if not request.json or not 'user' in request.json:
+	#	abort(400)
+	
+
+
+	who = subprocess.Popen(['w','-h'],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	for user in who.stdout.read().split('\n'):
+		fields = user.split()
+		if (len(fields) >1) and (fields[1] == 'console'):
+			print "name: %s terminal: %s" % ( fields[0], fields[1] )  
+
+	# get user name currently logged in to console
+	console_user = pwd.getpwuid(os.stat('/dev/console').st_uid).pw_name
+	if 'root' == console_user:
+		console_user = 'none'
+
+	users = [
+		{
+			'user': console_user,
+			'active': True,
+			'locked': False
+		}
+	]
+	return jsonify({'users': users})
+
+#
+@app.route('/edward/api/v1.0/lock', methods=['POST'])
+def lock_user():
 	if not request.json or not 'user' in request.json:
 		abort(400)
 
 	user = [
 		{
 			'user': request.json['user'],
-			'logintime': u'30 Min',
+#			'logintime': u'30 Min',
 			'active': True
 		}
 	]

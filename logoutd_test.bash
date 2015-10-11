@@ -2,10 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 # How to lock screen and avoid relogin?
+# # stat -f "%Su" /dev/console
 # Change shell to /usr/bin/false 
-# chpass -s /usr/bin/false <username>
+# # chpass -s /usr/bin/false <username>
 # Start login dialogue
-# /System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend
+# # /System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend
 
 # Unlock:
 # chpass -s /bin/bash <username>
@@ -13,5 +14,6 @@
 
 # test 
 # ./logoutd.py -D -LP 8888
-wget --header="Content-Type: application/json" --post-data='{"user":"my_lazy_child"}' -t 1 -qO -  http://127.0.0.1:8888/edward/api/v1.0/status
+#wget --header="Content-Type: application/json" --post-data='{"user":"my_lazy_child"}' -t 1 -qO -  http://127.0.0.1:8888/edward/api/v1.0/status
+wget --header="Content-Type: application/json"  -t 1 -qO -  http://127.0.0.1:8083/edward/api/v1.0/status
 
