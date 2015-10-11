@@ -32,9 +32,9 @@ if not sys.platform.startswith('win'):
 	import socket # accessing hostname for SYSLOG filter
 	import pwd    # log user name in SYSLOG
 # LOGOUTD specific
-from BaseHTTPServer import HTTPServer
-from BaseHTTPServer import BaseHTTPRequestHandler
-import json
+# flask must be installed via PIP
+from flask import Flask, request, jsonify, abort
+app = Flask(__name__)
 
 
 #####################################################
@@ -201,6 +201,8 @@ def add_business_logic_arguments(parser):
 	global is_debug
 	parser.add_argument('-C','--config', type=str, dest='CONFIG', default="%s/%s" % ( os.environ['HOME'] , '.logoutrc' ), help='LOGOUTD config file' )
 	parser.add_argument('-A','--accesslog', type=str, dest='ACCESSLOG', default="%s/%s" % ( os.environ['HOME'] , '.logoutdACCESSLOG' ), help='ACCESSLOG file for LOGOUD' )
+	parser.add_argument('-LP','--listen-port', type=int, dest='LISTENPORT', default=8083, help='Listen port (default 8083)' )
+	parser.add_argument('-LI','--listen-ip', type=str, dest='LISTENIP', default="127.0.0.1", help='Listen IP (default 127.0.0.1)' )
 
 # Read LOGOUTD config file!
 def read_config(config_file, args):
@@ -227,48 +229,21 @@ def read_config(config_file, args):
 
 	return True
 
-# my request handler
-class LogoutRequestHandler (BaseHTTPRequestHandler) :
-	config = None
+#
+@app.route('/edward/api/v1.0/status', methods=['POST'])
+def get_tasks():
+	if not request.json or not 'user' in request.json:
+		abort(400)
 
-	# TODO - how to share my config with the request handler?
-	#def setConfig(pConfig):
-	#	config = pConfig
-	
-	def do_GET(self):
-		logging.debug("GET called!")
-		self.handle_json_requests()
+	user = [
+		{
+			'user': request.json['user'],
+			'logintime': u'30 Min',
+			'active': True
+		}
+	]
+	return jsonify({'user': user})
 
-	def do_POST(self):
-		logging.debug("POST called!")
-		self.handle_json_requests()
-
-	def handle_json_requests(self):
-		if self.path == "/me" :
-			#send response code:
-			self.send_response(200)
-			#send headers:
-			self.send_header("Content-type:", "application/json")
-			# send a blank line to end headers:
-			self.wfile.write("\n")
-
-			#send response:
-			me = {"name": "ryanne"}
-			json.dump(me, self.wfile)
-		else:
-			#send response code:
-			self.send_response(404)
-			# send a blank line to end headers:
-			self.wfile.write("\n")
-
-
-# start web server
-def listen(args):
-	logging.debug("Starting web server!")
-	
-	server = HTTPServer(("localhost", 8003), LogoutRequestHandler )
-	#LogoutRequestHandler.setConfig(args)
-	server.serve_forever()
 
 # MAIN method
 def main():
@@ -286,6 +261,9 @@ def main():
 		return -44
 	logging.debug("ARGS is fine!")
 
+	logging.debug("Starting web server!")
+
+	app.run(host=args.LISTENIP,port=args.LISTENPORT,debug=is_debug)
 	return listen(args)
 
 # only call MAIN method if directly called!
