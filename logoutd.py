@@ -205,7 +205,9 @@ def add_business_logic_arguments(parser):
 	parser.add_argument('-C','--config', type=str, dest='CONFIG', default="%s/%s" % ( os.environ['HOME'] , '.logoutrc' ), help='LOGOUTD config file' )
 	parser.add_argument('-A','--accesslog', type=str, dest='ACCESSLOG', default="%s/%s" % ( os.environ['HOME'] , '.logoutdACCESSLOG' ), help='ACCESSLOG file for LOGOUD' )
 	parser.add_argument('-LP','--listen-port', type=int, dest='LISTENPORT', default=8083, help='Listen port (default 8083)' )
-	parser.add_argument('-LI','--listen-ip', type=str, dest='LISTENIP', default="127.0.0.1", help='Listen IP (default 127.0.0.1)' )
+	parser.add_argument('-LI','--listen-ip', type=str, dest='LISTENIP', default="0.0.0.0", help='Listen IP (default all IPs)' )
+	parser.add_argument('--list-system-users', action='store_true', default=False, dest='LISTSYSTEMUSERS', help='include users starting with _*' )
+
 
 # Read LOGOUTD config file!
 def read_config(config_file, args):
@@ -258,6 +260,9 @@ def get_users():
 		username = userResult.group(1)
 		fullname = userResult.group(2).rstrip()
 
+		# ignore system user
+		if not app.config['LISTSYSTEMUSERS'] and username.startswith( '_' ): continue
+
 		is_active = False
 		#is_locked = False
 		is_locked = 'not_yet_implemented'
@@ -289,7 +294,7 @@ def get_users():
 
 	return jsonify({'users': users})
 
-#
+# TODO
 @app.route('/edward/api/v1.0/lock', methods=['POST'])
 def lock_user():
 	if not request.json or not 'user' in request.json:
@@ -323,6 +328,7 @@ def main():
 
 	logging.debug("Starting web server!")
 
+	app.config['LISTSYSTEMUSERS'] = args.LISTSYSTEMUSERS
 	app.run(host=args.LISTENIP,port=args.LISTENPORT,debug=is_debug)
 	return listen(args)
 
