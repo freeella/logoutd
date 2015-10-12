@@ -32,7 +32,8 @@ if not sys.platform.startswith('win'):
 	import socket # accessing hostname for SYSLOG filter
 #	import pwd    # log user name in SYSLOG
 # LOGOUTD specific
-# pip install flask PyObjC
+# pip install flask (not yet PyObjC )
+import re        # Yes we need RegEx!
 from flask import Flask, request, jsonify, abort
 app = Flask(__name__)
 
@@ -246,30 +247,42 @@ def get_users():
 		active_user = 'none'
 
 	# get all user names currently logged in to the console
-	who = subprocess.Popen(['w','-h'],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-	for user_line in who.stdout.read().split('\n'):
-		user_fields = user_line.split()
+	# Example:
+	# finger -sg
+	#Login    Name                 TTY  Idle  Login  Time
+	#uname Some User        *con    4d  Do     06:57
+	finger = subprocess.Popen(['finger','-sg'],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	for user_line in finger.stdout.read().split('\n'):
+		userResult = re.match( r'([^\s]*) (.*?)\*con', user_line, re.M|re.I)
+		if userResult is None: continue
+		username = userResult.group(1)
+		fullname = userResult.group(2).rstrip()
+
 		is_active = False
-		is_locked = False
-		if (len(user_fields) >1) and (user_fields[1] == 'console'):
-			if active_user == user_fields[0]:
+		#is_locked = False
+		is_locked = 'not_yet_implemented'
+		is_disabled = False
+		if (username):
+			if active_user == username:
 				is_active = True
 
 			# check whether user is locked
-			dscl = subprocess.Popen(['dscl','.','-read','/Users/%s' % user_fields[0] ,'shell'],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+			dscl = subprocess.Popen(['dscl','.','-read','/Users/%s' % username ,'shell'],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 			for shell_line in dscl.stdout.read().split('\n'):
 				shell_fields = shell_line.split()
 				if (len(shell_fields) == 2) and (shell_fields[1] == '/usr/bin/false'):
-					is_locked = True
+					is_disabled = True
 
 
-			logging.debug("Found user '%s' connected to console! User is active(%s)! User is locked(%s)" % ( user_fields[0], str(is_active), str(is_locked) ) )
+			logging.debug("Found user '%s' (%s) connected to console! User is active(%s)! User is disabled(%s) locked(%s)" % ( username, fullname, str(is_active), str(is_disabled), str(is_locked) ) )
 			
 			# add user to JSON to be returned
 			monitor_user = {
-					'username': user_fields[0],
-					'active': is_active,
-					'locked': is_locked
+					'username': username,
+					'fullname': fullname,
+					'screen_active': is_active, # the user that is connected to the console
+					'screen_locked': is_locked, # connected but screen locked
+					'user_disabled': is_disabled # user can not login
 				}
 			users.append(monitor_user)
 
