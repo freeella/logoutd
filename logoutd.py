@@ -253,7 +253,7 @@ def get_users():
 	#uname Some User        *con    4d  Do     06:57
 	finger = subprocess.Popen(['finger','-sg'],stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 	for user_line in finger.stdout.read().split('\n'):
-		userResult = re.match( r'([^\s]*) (.*?)\*con', user_line, re.M|re.I)
+		userResult = re.match( r'([^\s]*)\s*(.*?)\*con', user_line, re.M|re.I)
 		if userResult is None: continue
 		username = userResult.group(1)
 		fullname = userResult.group(2).rstrip()
