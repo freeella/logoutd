@@ -32,6 +32,6 @@
 		<key>KeepAlive</key>
 		<true/>
 		<key>WorkingDirectory</key>
-		<string>/Users/kaiadmin/src/logoutd/env/edward</string>
+		<string>GIT_SRC_HOME/env/edward</string>
 	</dict>
 </plist>
