@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>Label</key>
+		<string>me.ellinger.edward.logoutd</string>
+		<key>EnvironmentVariables</key>
+		<dict>
+			<key>PATH</key>
+			<string>GIT_SRC_HOME/env/edward/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin</string>
+			<key>PYTHONPATH</key>
+			<string>GIT_SRC_HOME/env/edward/lib/python2.7/site-packages</string>
+			<key>HOME</key>
+			<string>GIT_SRC_HOME/env/edward</string>
+		</dict>
+		<key>ProgramArguments</key>
+		<array>
+			<string>GIT_SRC_HOME/env/edward/bin/python2.7</string>
+			<string>GIT_SRC_HOME/logoutd.py</string>
+			<string>--logfile</string>
+			<string>/var/log/edward_logoutd.log</string>
+			<string>-D</string>
+		</array>
+		<key>StandardOutPath</key>
+		<string>/var/log/edward_logoutd.stdout</string>
+		<key>StandardErrorPath</key>
+		<string>/var/log/edward_logoutd.stdout</string>
+		<key>Debug</key>
+		<true/>
+		<key>RunAtLoad</key>
+		<true/>
+		<key>KeepAlive</key>
+		<true/>
+		<key>WorkingDirectory</key>
+		<string>/Users/kaiadmin/src/logoutd/env/edward</string>
+	</dict>
+</plist>
